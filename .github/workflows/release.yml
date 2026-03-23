@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Resolve version
+        shell: pwsh
+        run: |
+          $version = '${{ github.ref_name }}'.Substring(1)
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Restore
+        run: dotnet restore .\tododeploy.csproj
+
+      - name: Publish unpackaged app
+        run: >
+          dotnet publish .\tododeploy.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -o .\artifacts\publish
+          -p:WindowsPackageType=None
+          -p:AppxPackage=false
+          -p:Version=${{ env.VERSION }}
+          -p:AssemblyVersion=${{ env.VERSION }}.0
+          -p:FileVersion=${{ env.VERSION }}.0
+          -p:InformationalVersion=${{ env.VERSION }}
+
+      - name: Install Velopack CLI
+        run: dotnet tool install --global vpk --version 0.0.1298
+
+      - name: Create release notes
+        shell: pwsh
+        run: |
+          @"
+          ## TodoDeploy ${{ env.VERSION }}
+
+          Automated release from GitHub Actions.
+          "@ | Set-Content .\artifacts\release-notes.md
+
+      - name: Pack installer
+        run: >
+          vpk pack
+          --packId mohammdowais.tododeploy
+          --packVersion ${{ env.VERSION }}
+          --packDir .\artifacts\publish
+          --mainExe tododeploy.exe
+          --packTitle "Todo Studio"
+          --packAuthors "Mohammad Owais"
+          --releaseNotes .\artifacts\release-notes.md
+          --outputDir .\artifacts\velopack
+          --noPortable
+
+      - name: Upload GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          vpk upload github
+          --repoUrl https://github.com/mohammdowais/tododeploy
+          --token ${{ secrets.GITHUB_TOKEN }}
+          --outputDir .\artifacts\velopack
+          --tag ${{ github.ref_name }}
+          --releaseName "TodoDeploy ${{ env.VERSION }}"
+          --targetCommitish ${{ github.sha }}
+          --merge
+          --publish

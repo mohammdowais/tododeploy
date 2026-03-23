@@ -12,7 +12,7 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid>
+    <Grid x:Name="RootGrid">
         <Grid.Background>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                 <GradientStop Color="#0F172A" Offset="0" />
@@ -58,7 +58,7 @@
                                        FontWeight="SemiBold"
                                        TextWrapping="Wrap" />
 
-                            <TextBlock Text="UI-only concept with gradients, glassy cards, and subtle entrance motion. The controls are laid out for creating, editing, saving, deleting, and marking items done."
+                            <TextBlock Text="UI-only concept with gradients, glassy cards, and subtle entrance motion. Releases are published through GitHub and installed builds can check for updates directly from the app."
                                        Foreground="#E8F1FF"
                                        FontSize="15"
                                        TextWrapping="Wrap"
@@ -137,12 +137,19 @@
                             <Border Padding="18"
                                     Background="#162032"
                                     CornerRadius="22">
-                                <StackPanel Spacing="6">
-                                    <TextBlock Text="Motion"
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="Updates"
                                                Foreground="#94A3B8" />
-                                    <TextBlock Text="Each card fades in using built-in theme transitions"
+                                    <Button x:Name="CheckForUpdatesButton"
+                                            Click="CheckForUpdatesButton_Click"
+                                            Content="Check for updates"
+                                            HorizontalAlignment="Left"
+                                            MinHeight="44"
+                                            Padding="18,0" />
+                                    <TextBlock x:Name="UpdateStatusText"
+                                               Text="Installed release builds can download updates from GitHub Releases."
                                                Foreground="White"
-                                               FontWeight="SemiBold"
+                                               Opacity="0.82"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
