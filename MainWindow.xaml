@@ -42,15 +42,32 @@
                             CornerRadius="28"
                             Background="{StaticResource HeroGradientBrush}">
                         <StackPanel Spacing="18">
-                            <Border Padding="12,6"
-                                    HorizontalAlignment="Left"
-                                    Background="#26FFFFFF"
-                                    CornerRadius="999">
-                                <TextBlock Text="Windows-style task board"
-                                           Foreground="White"
-                                           FontSize="13"
-                                           FontWeight="SemiBold" />
-                            </Border>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Padding="12,6"
+                                        HorizontalAlignment="Left"
+                                        Background="#26FFFFFF"
+                                        CornerRadius="999">
+                                    <TextBlock Text="Windows-style task board"
+                                               Foreground="White"
+                                               FontSize="13"
+                                               FontWeight="SemiBold" />
+                                </Border>
+
+                                <Button Grid.Column="1"
+                                        Margin="12,0,0,0"
+                                        Click="MinimizeButton_Click"
+                                        Content="Minimize" />
+                                <Button Grid.Column="2"
+                                        Margin="12,0,0,0"
+                                        Click="ExitFullScreenButton_Click"
+                                        Content="Exit full screen" />
+                            </Grid>
 
                             <TextBlock Text="Plan multiple todo lists in one clean workspace."
                                        Foreground="White"
@@ -58,7 +75,7 @@
                                        FontWeight="SemiBold"
                                        TextWrapping="Wrap" />
 
-                            <TextBlock Text="UI-only concept with gradients, glassy cards, and subtle entrance motion. Releases are published through GitHub and installed builds can check for updates directly from the app."
+                            <TextBlock Text="Lists and items are stored in SQLite. The app writes action logs for create, save, edit, delete, done-state changes, window actions, and update checks."
                                        Foreground="#E8F1FF"
                                        FontSize="15"
                                        TextWrapping="Wrap"
@@ -71,26 +88,51 @@
                                     BorderThickness="1"
                                     CornerRadius="24">
                                 <StackPanel Spacing="14">
-                                    <TextBlock Text="Create a list"
+                                    <TextBlock x:Name="ComposerTitleText"
+                                               Text="Create a list"
                                                Foreground="White"
                                                FontSize="20"
                                                FontWeight="SemiBold" />
 
-                                    <TextBox Header="List title"
+                                    <TextBox x:Name="ListTitleTextBox"
+                                             Header="List title"
                                              PlaceholderText="Product launch checklist"
-                                             Text="Product launch checklist"
                                              MinHeight="52" />
 
-                                    <TextBox Header="Add item"
+                                    <TextBox x:Name="FirstItemTextBox"
+                                             Header="First item"
                                              PlaceholderText="Draft hero section copy"
-                                             Text="Draft hero section copy"
                                              MinHeight="52" />
 
-                                    <Button Content="Save list"
-                                            MinHeight="50"
-                                            Padding="24,0"
-                                            Foreground="White"
-                                            Background="#2563EB" />
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button x:Name="SaveListButton"
+                                                Click="SaveListButton_Click"
+                                                Content="Save list"
+                                                MinHeight="50"
+                                                Padding="24,0"
+                                                Foreground="White"
+                                                Background="#2563EB" />
+
+                                        <Button x:Name="CancelEditButton"
+                                                Grid.Column="1"
+                                                Click="CancelEditButton_Click"
+                                                Content="Cancel"
+                                                MinHeight="50"
+                                                Padding="18,0"
+                                                Visibility="Collapsed" />
+
+                                        <TextBlock Grid.Column="2"
+                                                   VerticalAlignment="Center"
+                                                   Text="Use Edit on a saved list to rename it and optionally add another first item in the same action."
+                                                   Foreground="#E5F0FF"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -114,10 +156,16 @@
                                 <StackPanel Spacing="8">
                                     <TextBlock Text="Lists in view"
                                                Foreground="#94A3B8" />
-                                    <TextBlock Text="3"
+                                    <TextBlock x:Name="ListCountText"
+                                               Text="Loading..."
                                                Foreground="White"
                                                FontSize="40"
                                                FontWeight="SemiBold" />
+                                    <ProgressRing x:Name="ListsLoadingRing"
+                                                  IsActive="True"
+                                                  Width="28"
+                                                  Height="28"
+                                                  HorizontalAlignment="Left" />
                                 </StackPanel>
                             </Border>
 
@@ -125,11 +173,13 @@
                                     Background="#162032"
                                     CornerRadius="22">
                                 <StackPanel Spacing="6">
-                                    <TextBlock Text="Look"
+                                    <TextBlock Text="Storage"
                                                Foreground="#94A3B8" />
-                                    <TextBlock Text="Mica backdrop, gradient hero, rounded cards"
+                                    <TextBlock x:Name="DbPathText"
                                                Foreground="White"
-                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock x:Name="LogPathText"
+                                               Foreground="White"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
@@ -162,208 +212,12 @@
                            FontSize="26"
                            FontWeight="SemiBold" />
 
-                <Border Padding="24"
-                        Background="#1E293B"
-                        BorderBrush="#334155"
-                        BorderThickness="1"
-                        CornerRadius="28">
-                    <Border.Transitions>
-                        <TransitionCollection>
-                            <EntranceThemeTransition FromVerticalOffset="32" IsStaggeringEnabled="True" />
-                        </TransitionCollection>
-                    </Border.Transitions>
+                <TextBlock x:Name="ListsLoadingText"
+                           Text="Loading lists from database..."
+                           Foreground="#CBD5E1"
+                           Visibility="Visible" />
 
-                    <StackPanel Spacing="18">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Design sprint"
-                                           Foreground="White"
-                                           FontSize="22"
-                                           FontWeight="SemiBold" />
-                                <TextBlock Text="3 items"
-                                           Foreground="#94A3B8" />
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
-                                <Button Content="Edit" />
-                                <Button Content="Delete" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid ColumnSpacing="10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <TextBox Grid.Column="0"
-                                     Header="Add item"
-                                     PlaceholderText="Add another task to this list"
-                                     MinHeight="52" />
-
-                            <Button Grid.Column="1"
-                                    VerticalAlignment="Bottom"
-                                    Content="Add item" />
-                        </Grid>
-
-                        <Border Padding="14"
-                                Background="#162032"
-                                CornerRadius="20">
-                            <Grid ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Text="Review motion studies"
-                                           Foreground="White"
-                                           VerticalAlignment="Center" />
-                                <ToggleButton Grid.Column="1"
-                                              Content="Mark done" />
-                                <Button Grid.Column="2"
-                                        Content="Delete" />
-                            </Grid>
-                        </Border>
-
-                        <Border Padding="14"
-                                Background="#162032"
-                                CornerRadius="20">
-                            <Grid ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Text="Refine hero card spacing"
-                                           Foreground="#CBD5E1"
-                                           VerticalAlignment="Center" />
-                                <ToggleButton Grid.Column="1"
-                                              IsChecked="True"
-                                              Content="Done" />
-                                <Button Grid.Column="2"
-                                        Content="Delete" />
-                            </Grid>
-                        </Border>
-
-                        <Border Padding="14"
-                                Background="#162032"
-                                CornerRadius="20">
-                            <Grid ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Text="Ship dark mode mockup"
-                                           Foreground="White"
-                                           VerticalAlignment="Center" />
-                                <ToggleButton Grid.Column="1"
-                                              Content="Mark done" />
-                                <Button Grid.Column="2"
-                                        Content="Delete" />
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </Border>
-
-                <Border Padding="24"
-                        Background="#1E293B"
-                        BorderBrush="#334155"
-                        BorderThickness="1"
-                        CornerRadius="28">
-                    <Border.Transitions>
-                        <TransitionCollection>
-                            <EntranceThemeTransition FromVerticalOffset="44" IsStaggeringEnabled="True" />
-                        </TransitionCollection>
-                    </Border.Transitions>
-
-                    <StackPanel Spacing="18">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Weekend errands"
-                                           Foreground="White"
-                                           FontSize="22"
-                                           FontWeight="SemiBold" />
-                                <TextBlock Text="3 items"
-                                           Foreground="#94A3B8" />
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
-                                <Button Content="Edit" />
-                                <Button Content="Delete" />
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid ColumnSpacing="10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <TextBox Grid.Column="0"
-                                     Header="Add item"
-                                     PlaceholderText="Add another task to this list"
-                                     MinHeight="52" />
-
-                            <Button Grid.Column="1"
-                                    VerticalAlignment="Bottom"
-                                    Content="Add item" />
-                        </Grid>
-
-                        <Border Padding="14"
-                                Background="#162032"
-                                CornerRadius="20">
-                            <Grid ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Text="Pick up groceries"
-                                           Foreground="White"
-                                           VerticalAlignment="Center" />
-                                <ToggleButton Grid.Column="1"
-                                              Content="Mark done" />
-                                <Button Grid.Column="2"
-                                        Content="Delete" />
-                            </Grid>
-                        </Border>
-
-                        <Border Padding="14"
-                                Background="#162032"
-                                CornerRadius="20">
-                            <Grid ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Text="Book AC service"
-                                           Foreground="White"
-                                           VerticalAlignment="Center" />
-                                <ToggleButton Grid.Column="1"
-                                              Content="Mark done" />
-                                <Button Grid.Column="2"
-                                        Content="Delete" />
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </Border>
+                <StackPanel x:Name="ListsHost" Spacing="20" />
             </StackPanel>
         </ScrollViewer>
     </Grid>
