@@ -47,6 +47,10 @@ namespace tododeploy
 
         private async Task LoadDataAsync()
         {
+            ListCountText.Text = "Loading...";
+            ListsLoadingRing.IsActive = true;
+            ListsLoadingText.Visibility = Visibility.Visible;
+
             await _repository.InitializeAsync();
             TodoLists.Clear();
             foreach (var list in await _repository.GetListsAsync())
@@ -56,6 +60,8 @@ namespace tododeploy
 
             RefreshOverview();
             RenderLists();
+            ListsLoadingRing.IsActive = false;
+            ListsLoadingText.Visibility = Visibility.Collapsed;
             await _logger.LogAsync("data.load", $"Loaded {TodoLists.Count} lists from SQLite.");
         }
 
@@ -508,5 +514,3 @@ namespace tododeploy
         }
     }
 }
-
-
